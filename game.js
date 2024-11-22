@@ -17,6 +17,7 @@ const startGame = () => {
     gameOverDisplay.style.display = 'none';
     scoreDisplay.innerText = `Score: ${score}`;
     player.style.bottom = '10px';
+    player.style.left = '50px';  // Start at the left of the screen
     gameInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
     obstacleInterval = setInterval(spawnObstacle, 2000); // Obstacles every 2 seconds
     powerUpInterval = setInterval(spawnPowerUp, 5000); // Power-ups every 5 seconds
@@ -99,7 +100,16 @@ const collisionDetection = (player, element) => {
 };
 
 document.addEventListener('keydown', (e) => {
-    if (e.key === ' ' && !gameOver) {  // Space to jump (for extra flair)
+    // Move left and right
+    if (e.key === 'ArrowLeft' && parseInt(player.style.left) > 0) {
+        player.style.left = `${parseInt(player.style.left) - 10}px`;  // Move left
+    }
+    if (e.key === 'ArrowRight' && parseInt(player.style.left) < gameContainer.clientWidth - 30) {
+        player.style.left = `${parseInt(player.style.left) + 10}px`;  // Move right
+    }
+
+    // Jump with spacebar
+    if (e.key === ' ' && !gameOver) {
         player.style.bottom = `${parseInt(player.style.bottom) + 50}px`;
         setTimeout(() => player.style.bottom = '10px', 300);  // Jump back down after 300ms
     }
