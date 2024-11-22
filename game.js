@@ -1,27 +1,28 @@
 const player = document.getElementById('player');
 const scoreDisplay = document.getElementById('score');
 const gameOverDisplay = document.getElementById('gameOver');
-const restartButton = document.getElementById('restartButton');
 const gameContainer = document.getElementById('gameContainer');
 
 let score = 0;
 let gameOver = false;
 let powerUpActive = false;
 let playerSpeed = 5;
-let jumpInProgress = false;
 let gameInterval, obstacleInterval, powerUpInterval;
+
+let isJumping = false;
+let jumpVelocity = 0;
+let gravity = -0.5; // This controls how strong gravity is.
+let jumpHeight = 15; // Controls the strength of the jump.
 
 const startGame = () => {
     score = 0;
     playerSpeed = 5;
     gameOver = false;
     powerUpActive = false;
-    jumpInProgress = false;
     gameOverDisplay.style.display = 'none';
     scoreDisplay.innerText = `Score: ${score}`;
     player.style.bottom = '10px';
     player.style.left = '50px';  // Start at the left of the screen
-    restartButton.style.display = 'none';
     gameInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
     obstacleInterval = setInterval(spawnObstacle, 2000); // Obstacles every 2 seconds
     powerUpInterval = setInterval(spawnPowerUp, 5000); // Power-ups every 5 seconds
@@ -30,7 +31,17 @@ const startGame = () => {
 const gameLoop = () => {
     if (gameOver) return clearInterval(gameInterval);
 
-    // Move obstacles, check for collisions, etc.
+    // Apply gravity to the player (fall faster and faster)
+    if (isJumping) {
+        jumpVelocity += gravity; // This makes the jump fall faster.
+        let newBottom = parseInt(player.style.bottom) + jumpVelocity;
+        if (newBottom <= 10) { // Stop falling when touching the ground
+            newBottom = 10;
+            isJumping = false;
+        }
+        player.style.bottom = `${newBottom}px}`;
+    }
+
     // Update score
     score++;
     scoreDisplay.innerText = `Score: ${score}`;
@@ -40,6 +51,22 @@ const gameLoop = () => {
         playerSpeed = 10;
     }
 };
+
+document.addEventListener('keydown', (e) => {
+    // Move left and right with smoother sliding
+    if (e.key === 'ArrowLeft' && parseInt(player.style.left) > 0) {
+        player.style.left = `${parseInt(player.style.left) - 10}px`;  // Move left
+    }
+    if (e.key === 'ArrowRight' && parseInt(player.style.left) < gameContainer.clientWidth - 30) {
+        player.style.left = `${parseInt(player.style.left) + 10}px`;  // Move right
+    }
+
+    // Jump with spacebar (add gravity and smooth movement)
+    if (e.key === ' ' && !gameOver && !isJumping) {
+        isJumping = true;
+        jumpVelocity = jumpHeight; // Set the initial jump speed
+    }
+});
 
 const spawnObstacle = () => {
     const obstacle = document.createElement('div');
@@ -62,7 +89,6 @@ const spawnObstacle = () => {
             if (collisionDetection(player, obstacle)) {
                 gameOver = true;
                 gameOverDisplay.style.display = 'block';
-                restartButton.style.display = 'block';
                 clearInterval(gameInterval);
                 clearInterval(obstacleInterval);
                 clearInterval(powerUpInterval);
@@ -103,28 +129,5 @@ const collisionDetection = (player, element) => {
              playerRect.bottom < elementRect.top || 
              playerRect.top > elementRect.bottom);
 };
-
-document.addEventListener('keydown', (e) => {
-    // Move left and right
-    if (e.key === 'ArrowLeft' && parseInt(player.style.left) > 0) {
-        player.style.left = `${parseInt(player.style.left) - 10}px`;  // Move left
-    }
-    if (e.key === 'ArrowRight' && parseInt(player.style.left) < gameContainer.clientWidth - 30) {
-        player.style.left = `${parseInt(player.style.left) + 10}px`;  // Move right
-    }
-
-    // Jump with spacebar
-    if (e.key === ' ' && !gameOver && !jumpInProgress) {
-        jumpInProgress = true;
-        player.style.bottom = `${parseInt(player.style.bottom) + 50}px`;
-        setTimeout(() => player.style.bottom = '10px', 300);  // Jump back down after 300ms
-        setTimeout(() => jumpInProgress = false, 300);  // Prevent multiple jumps
-    }
-});
-
-// Restart the game
-restartButton.addEventListener('click', () => {
-    startGame();
-});
 
 startGame();
