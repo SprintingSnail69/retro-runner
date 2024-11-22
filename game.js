@@ -3,8 +3,8 @@ let gameOverScreen = document.getElementById('game-over');
 let playAgainButton = document.getElementById('play-again');
 let isGameOver = false;
 let velocityX = 0;  // Horizontal speed
-let friction = 0.1; // Friction to slow down movement
-let moveSpeed = 5;  // Speed of movement
+let friction = 0.51; // Friction to slow down movement
+let moveSpeed = 2.5;  // Speed of movement
 
 // Movement controls
 let isMovingLeft = false;
