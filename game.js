@@ -70,5 +70,5 @@ playAgainButton.addEventListener('click', () => {
   gameLoop();
 });
 
-// Start the game
+// Start the game loop immediately
 gameLoop();
