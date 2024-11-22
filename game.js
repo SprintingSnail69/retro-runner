@@ -1,133 +1,74 @@
-const player = document.getElementById('player');
-const scoreDisplay = document.getElementById('score');
-const gameOverDisplay = document.getElementById('gameOver');
-const gameContainer = document.getElementById('gameContainer');
+let player = document.getElementById('player');
+let gameOverScreen = document.getElementById('game-over');
+let playAgainButton = document.getElementById('play-again');
+let isGameOver = false;
+let velocityX = 0;  // Horizontal speed
+let friction = 0.1; // Friction to slow down movement
+let moveSpeed = 5;  // Speed of movement
 
-let score = 0;
-let gameOver = false;
-let powerUpActive = false;
-let playerSpeed = 5;
-let gameInterval, obstacleInterval, powerUpInterval;
-
-let isJumping = false;
-let jumpVelocity = 0;
-let gravity = -0.5; // This controls how strong gravity is.
-let jumpHeight = 15; // Controls the strength of the jump.
-
-const startGame = () => {
-    score = 0;
-    playerSpeed = 5;
-    gameOver = false;
-    powerUpActive = false;
-    gameOverDisplay.style.display = 'none';
-    scoreDisplay.innerText = `Score: ${score}`;
-    player.style.bottom = '10px';
-    player.style.left = '50px';  // Start at the left of the screen
-    gameInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
-    obstacleInterval = setInterval(spawnObstacle, 2000); // Obstacles every 2 seconds
-    powerUpInterval = setInterval(spawnPowerUp, 5000); // Power-ups every 5 seconds
-};
-
-const gameLoop = () => {
-    if (gameOver) return clearInterval(gameInterval);
-
-    // Apply gravity to the player (fall faster and faster)
-    if (isJumping) {
-        jumpVelocity += gravity; // This makes the jump fall faster.
-        let newBottom = parseInt(player.style.bottom) + jumpVelocity;
-        if (newBottom <= 10) { // Stop falling when touching the ground
-            newBottom = 10;
-            isJumping = false;
-        }
-        player.style.bottom = `${newBottom}px}`;
-    }
-
-    // Update score
-    score++;
-    scoreDisplay.innerText = `Score: ${score}`;
-
-    // Check for power-up
-    if (powerUpActive) {
-        playerSpeed = 10;
-    }
-};
+// Movement controls
+let isMovingLeft = false;
+let isMovingRight = false;
 
 document.addEventListener('keydown', (e) => {
-    // Move left and right with smoother sliding
-    if (e.key === 'ArrowLeft' && parseInt(player.style.left) > 0) {
-        player.style.left = `${parseInt(player.style.left) - 10}px`;  // Move left
-    }
-    if (e.key === 'ArrowRight' && parseInt(player.style.left) < gameContainer.clientWidth - 30) {
-        player.style.left = `${parseInt(player.style.left) + 10}px`;  // Move right
-    }
-
-    // Jump with spacebar (add gravity and smooth movement)
-    if (e.key === ' ' && !gameOver && !isJumping) {
-        isJumping = true;
-        jumpVelocity = jumpHeight; // Set the initial jump speed
-    }
+  if (isGameOver) return;  // No movement if the game is over
+  
+  if (e.key === 'ArrowLeft' || e.key === 'a') {
+    isMovingLeft = true;
+  }
+  if (e.key === 'ArrowRight' || e.key === 'd') {
+    isMovingRight = true;
+  }
 });
 
-const spawnObstacle = () => {
-    const obstacle = document.createElement('div');
-    obstacle.style.position = 'absolute';
-    obstacle.style.width = '30px';
-    obstacle.style.height = '30px';
-    obstacle.style.backgroundColor = 'red';
-    obstacle.style.left = `${Math.random() * (gameContainer.clientWidth - 30)}px`;
-    obstacle.style.top = '-30px';
-    gameContainer.appendChild(obstacle);
-    
-    let obstacleSpeed = 3;
-    const moveObstacle = setInterval(() => {
-        if (parseInt(obstacle.style.top) > gameContainer.clientHeight) {
-            clearInterval(moveObstacle);
-            gameContainer.removeChild(obstacle);
-        } else {
-            obstacle.style.top = `${parseInt(obstacle.style.top) + obstacleSpeed}px`;
+document.addEventListener('keyup', (e) => {
+  if (e.key === 'ArrowLeft' || e.key === 'a') {
+    isMovingLeft = false;
+  }
+  if (e.key === 'ArrowRight' || e.key === 'd') {
+    isMovingRight = false;
+  }
+});
 
-            if (collisionDetection(player, obstacle)) {
-                gameOver = true;
-                gameOverDisplay.style.display = 'block';
-                clearInterval(gameInterval);
-                clearInterval(obstacleInterval);
-                clearInterval(powerUpInterval);
-            }
-        }
-    }, 1000 / 60);
-};
+// Game loop
+function gameLoop() {
+  if (isGameOver) return;
 
-const spawnPowerUp = () => {
-    const powerUp = document.createElement('div');
-    powerUp.classList.add('power-up');
-    powerUp.style.left = `${Math.random() * (gameContainer.clientWidth - 20)}px`;
-    powerUp.style.top = '-20px';
-    gameContainer.appendChild(powerUp);
+  // Handle movement
+  if (isMovingLeft) {
+    velocityX = -moveSpeed;
+  } else if (isMovingRight) {
+    velocityX = moveSpeed;
+  } else {
+    velocityX *= 1 - friction;  // Apply friction when no key is pressed
+  }
 
-    let powerUpSpeed = 2;
-    const movePowerUp = setInterval(() => {
-        if (parseInt(powerUp.style.top) > gameContainer.clientHeight) {
-            clearInterval(movePowerUp);
-            gameContainer.removeChild(powerUp);
-        } else {
-            powerUp.style.top = `${parseInt(powerUp.style.top) + powerUpSpeed}px`;
+  // Update player position
+  let playerX = parseFloat(player.style.left || '50%');
+  playerX += velocityX;
+  
+  // Prevent going off-screen
+  playerX = Math.max(0, Math.min(playerX, 100));
 
-            if (collisionDetection(player, powerUp)) {
-                powerUpActive = true;
-                setTimeout(() => powerUpActive = false, 5000); // Power-up lasts 5 seconds
-                gameContainer.removeChild(powerUp);
-            }
-        }
-    }, 1000 / 60);
-};
+  player.style.left = playerX + '%';
 
-const collisionDetection = (player, element) => {
-    const playerRect = player.getBoundingClientRect();
-    const elementRect = element.getBoundingClientRect();
-    return !(playerRect.right < elementRect.left || 
-             playerRect.left > elementRect.right || 
-             playerRect.bottom < elementRect.top || 
-             playerRect.top > elementRect.bottom);
-};
+  requestAnimationFrame(gameLoop);
+}
 
-startGame();
+// Game Over logic
+function gameOver() {
+  isGameOver = true;
+  gameOverScreen.style.display = 'block';
+}
+
+// Restart game
+playAgainButton.addEventListener('click', () => {
+  isGameOver = false;
+  gameOverScreen.style.display = 'none';
+  velocityX = 0;
+  player.style.left = '50%';  // Reset player position
+  gameLoop();
+});
+
+// Start the game
+gameLoop();
