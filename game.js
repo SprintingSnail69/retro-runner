@@ -1,12 +1,14 @@
 const player = document.getElementById('player');
 const scoreDisplay = document.getElementById('score');
 const gameOverDisplay = document.getElementById('gameOver');
+const restartButton = document.getElementById('restartButton');
 const gameContainer = document.getElementById('gameContainer');
 
 let score = 0;
 let gameOver = false;
 let powerUpActive = false;
 let playerSpeed = 5;
+let jumpInProgress = false;
 let gameInterval, obstacleInterval, powerUpInterval;
 
 const startGame = () => {
@@ -14,10 +16,12 @@ const startGame = () => {
     playerSpeed = 5;
     gameOver = false;
     powerUpActive = false;
+    jumpInProgress = false;
     gameOverDisplay.style.display = 'none';
     scoreDisplay.innerText = `Score: ${score}`;
     player.style.bottom = '10px';
     player.style.left = '50px';  // Start at the left of the screen
+    restartButton.style.display = 'none';
     gameInterval = setInterval(gameLoop, 1000 / 60); // 60 FPS
     obstacleInterval = setInterval(spawnObstacle, 2000); // Obstacles every 2 seconds
     powerUpInterval = setInterval(spawnPowerUp, 5000); // Power-ups every 5 seconds
@@ -58,6 +62,7 @@ const spawnObstacle = () => {
             if (collisionDetection(player, obstacle)) {
                 gameOver = true;
                 gameOverDisplay.style.display = 'block';
+                restartButton.style.display = 'block';
                 clearInterval(gameInterval);
                 clearInterval(obstacleInterval);
                 clearInterval(powerUpInterval);
@@ -109,10 +114,17 @@ document.addEventListener('keydown', (e) => {
     }
 
     // Jump with spacebar
-    if (e.key === ' ' && !gameOver) {
+    if (e.key === ' ' && !gameOver && !jumpInProgress) {
+        jumpInProgress = true;
         player.style.bottom = `${parseInt(player.style.bottom) + 50}px`;
         setTimeout(() => player.style.bottom = '10px', 300);  // Jump back down after 300ms
+        setTimeout(() => jumpInProgress = false, 300);  // Prevent multiple jumps
     }
+});
+
+// Restart the game
+restartButton.addEventListener('click', () => {
+    startGame();
 });
 
 startGame();
